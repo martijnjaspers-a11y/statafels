@@ -14,3 +14,7 @@ jobs:
           curl -f -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/statafel_reservations?select=id&limit=1" \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
+
+      - name: Notify healthchecks.io of success
+        if: success()
+        run: curl -fsS "${{ secrets.HEALTHCHECK_URL }}"
