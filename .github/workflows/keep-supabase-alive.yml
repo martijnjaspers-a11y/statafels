@@ -2,19 +2,39 @@ name: Keep Supabase Alive
 
 on:
   schedule:
-    - cron: '0 0 */4 * *'
+    # Elke dag om 03:17 UTC
+    - cron: '17 3 * * *'
+
+  # Hiermee kun je de workflow ook handmatig starten
   workflow_dispatch:
 
 jobs:
   ping_supabase:
     runs-on: ubuntu-latest
-    steps:
-      - name: Send API Request to Supabase
-        run: |
-          curl -f -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/statafel_reservations?select=id&limit=1" \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
 
-      - name: Notify healthchecks.io of success
+    steps:
+      - name: Query Supabase database
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          echo "Contact maken met Supabase..."
+
+          RESPONSE=$(curl \
+            --fail-with-body \
+            --silent \
+            --show-error \
+            --location \
+            --request GET \
+            "${SUPABASE_URL}/rest/v1/statafel_reservations?select=id&limit=1" \
+            --header "apikey: ${SUPABASE_ANON_KEY}" \
+            --header "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+
+          echo "Supabase heeft succesvol gereageerd."
+          echo "Aantal ontvangen tekens: ${#RESPONSE}"
+
+      - name: Controleer succesvolle uitvoering
         if: success()
-        run: curl -fsS "${{ secrets.HEALTHCHECK_URL }}"
+        run: |
+          echo "Supabase keep-alive is succesvol uitgevoerd."
+          echo "De database heeft vandaag een echte query ontvangen."
